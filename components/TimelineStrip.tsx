@@ -37,14 +37,12 @@ export function TimelineStrip({
               <div className="relative flex flex-col items-center z-10">
                 {isDone ? (
                   <div
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-seafoam border-[2.5px] border-ink flex items-center justify-center shadow-[2px_2px_0_#17171C]"
-                    title={`${inc.title} (Completed)`}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-seafoam border-[2.5px] border-ink flex items-center justify-center shadow-[2px_2px_0_#17171C] ${
+                      isPerfect ? "ring-[3px] ring-butter ring-offset-2 ring-offset-chalk" : ""
+                    }`}
+                    title={`${inc.title} (Completed${isPerfect ? " - Zero rewinds!" : ""})`}
                   >
-                    {isPerfect ? (
-                      <Star className="w-4 h-4 sm:w-5 sm:h-5 text-ink fill-butter" strokeWidth={2.5} />
-                    ) : (
-                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-ink" strokeWidth={2.5} />
-                    )}
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-ink" strokeWidth={2.5} />
                   </div>
                 ) : isCurrent ? (
                   <div
@@ -57,10 +55,10 @@ export function TimelineStrip({
                   </div>
                 ) : (
                   <div
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-stone/40 border-[2.5px] border-ink/60 flex items-center justify-center text-mute"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-stone/40 border-[2.5px] border-ink/40 flex items-center justify-center text-mute"
                     title={`${inc.title} (Locked)`}
                   >
-                    <Lock className="w-4 h-4 text-ink/70" strokeWidth={2.5} />
+                    <Lock className="w-4 h-4 text-ink/60" strokeWidth={2.5} />
                   </div>
                 )}
 

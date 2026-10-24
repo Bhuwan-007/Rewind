@@ -46,6 +46,7 @@ export default function CasePage() {
   const [chosenLetter, setChosenLetter] = useState<string>("A");
   const [disabledOptionIds, setDisabledOptionIds] = useState<string[]>([]);
   const [currentRewindsUsed, setCurrentRewindsUsed] = useState(0);
+  const [prefetchedIncident, setPrefetchedIncident] = useState<Incident | null>(null);
 
   // Full seed cases as instant fallback for testing
   const parsedSeed = FullCaseFileSchema.parse(cybersecuritySeed);
@@ -71,6 +72,17 @@ export default function CasePage() {
         })),
       };
       initCaseState(fallbackCase, parsedSeed.incidents[0]);
+    } else {
+      // Resume step and disabled options from localStorage if available
+      if (current.currentStep) {
+        setStep(current.currentStep as FlowStep);
+      }
+      if (current.disabledOptionIds) {
+        setDisabledOptionIds(current.disabledOptionIds);
+      }
+      if (current.prefetchedIncident) {
+        setPrefetchedIncident(current.prefetchedIncident as Incident);
+      }
     }
   }, []);
 
@@ -92,6 +104,52 @@ export default function CasePage() {
   const results = gameState.results || [];
   const score = gameState.score || 0;
 
+  // Prefetch the next incident in background while debrief is shown
+  useEffect(() => {
+    if (step === "debrief" && currentIndex < 4 && caseFile) {
+      const nextIdx = currentIndex + 1;
+      const nextMeta = caseFile.incidents[nextIdx];
+      if (nextMeta && (!prefetchedIncident || prefetchedIncident.id !== nextMeta.id)) {
+        fetch("/api/incident", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            goal: caseFile.goal,
+            role: caseFile.role,
+            incident: nextMeta,
+            difficulty: nextMeta.difficulty || 2,
+            support_level: currentRewindsUsed >= 2 ? "high" : "normal",
+            previous_concepts: results
+              .map((r, i) => caseFile.incidents[i]?.concept)
+              .filter(Boolean)
+              .join(", "),
+          }),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data) {
+              setPrefetchedIncident(data);
+              saveGameState({
+                ...getGameStateSnapshot(),
+                prefetchedIncident: data,
+              });
+            }
+          })
+          .catch((err) => console.warn("Background prefetch failed:", err));
+      }
+    }
+  }, [step, currentIndex, caseFile, currentRewindsUsed, results, prefetchedIncident]);
+
+  // Update step and save to localStorage
+  const transitionToStep = (nextStep: FlowStep, updatedDisabledIds?: string[]) => {
+    setStep(nextStep);
+    saveGameState({
+      ...gameState,
+      currentStep: nextStep,
+      disabledOptionIds: updatedDisabledIds ?? disabledOptionIds,
+    });
+  };
+
   // Handle committing an option choice
   const handleSelectOption = (option: Option, letter: string) => {
     if (disabledOptionIds.includes(option.id)) return;
@@ -104,6 +162,7 @@ export default function CasePage() {
     saveGameState({
       ...gameState,
       stability: nextStability,
+      currentStep: "reveal",
     });
 
     setStep("reveal");
@@ -117,17 +176,18 @@ export default function CasePage() {
     consumeRewindToken(gameState);
 
     // 2. Disable chosen option for this incident
-    setDisabledOptionIds((prev) => [...prev, chosenOption.id]);
+    const nextDisabled = [...disabledOptionIds, chosenOption.id];
+    setDisabledOptionIds(nextDisabled);
     setCurrentRewindsUsed((prev) => prev + 1);
 
     // 3. Return to incident screen
     setChosenOption(null);
-    setStep("incident");
+    transitionToStep("incident", nextDisabled);
   };
 
   // Handle Continue button press after reveal
   const handleContinueAfterReveal = () => {
-    setStep("debrief");
+    transitionToStep("debrief");
   };
 
   // Handle Next Incident button press
@@ -146,33 +206,34 @@ export default function CasePage() {
 
     // 2. Check if this was the last incident
     if (currentIndex >= 4) {
-      setStep("closed");
+      transitionToStep("closed");
       return;
     }
 
-    // 3. Load or generate next incident
+    // 3. Load next incident: use prefetched if ready, else fetch or use seed
     const nextIdx = currentIndex + 1;
-    let nextIncident: Incident = parsedSeed.incidents[nextIdx] as Incident;
+    let nextIncident: Incident = prefetchedIncident || (parsedSeed.incidents[nextIdx] as Incident);
 
-    // If live API is available, fetch next incident in background
-    try {
-      const nextMeta = caseFile.incidents[nextIdx];
-      const res = await fetch("/api/incident", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          goal: caseFile.goal,
-          role: caseFile.role,
-          incident: nextMeta,
-          difficulty: nextMeta.difficulty || 2,
-          support_level: currentRewindsUsed >= 2 ? "high" : "normal",
-        }),
-      });
-      if (res.ok) {
-        nextIncident = await res.json();
+    if (!prefetchedIncident) {
+      try {
+        const nextMeta = caseFile.incidents[nextIdx];
+        const res = await fetch("/api/incident", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            goal: caseFile.goal,
+            role: caseFile.role,
+            incident: nextMeta,
+            difficulty: nextMeta.difficulty || 2,
+            support_level: currentRewindsUsed >= 2 ? "high" : "normal",
+          }),
+        });
+        if (res.ok) {
+          nextIncident = await res.json();
+        }
+      } catch (err) {
+        console.warn("Using fallback seed for next incident:", err);
       }
-    } catch (err) {
-      console.warn("Using fallback seed for next incident:", err);
     }
 
     // 4. Advance store to next incident
@@ -182,7 +243,8 @@ export default function CasePage() {
     setDisabledOptionIds([]);
     setCurrentRewindsUsed(0);
     setChosenOption(null);
-    setStep("incident");
+    setPrefetchedIncident(null);
+    transitionToStep("incident", []);
   };
 
   // Restart case

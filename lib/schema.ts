@@ -112,14 +112,18 @@ export const ReportRankSchema = z.enum(["Intern", "Analyst", "Lead", "Chief"]);
 export type ReportRank = z.infer<typeof ReportRankSchema>;
 
 export const ReportSchema = z.object({
-  goal: z.string().min(1, "Goal is required"),
-  role: z.string().min(1, "Role is required"),
-  rank: ReportRankSchema,
-  score: z.number().int().min(0),
-  conceptsUnlocked: z.array(z.string().min(1)),
+  goal: z.string().optional(),
+  role: z.string().optional(),
+  rank: ReportRankSchema.optional(),
+  score: z.number().int().optional(),
+  conceptsUnlocked: z.array(z.string()).optional(),
+  report_title: z.string().optional(),
   verdict: z.string().min(1, "Verdict is required"),
-  perfectCount: z.number().int().min(0),
-  totalRewinds: z.number().int().min(0),
+  strongest_skill: z.string().optional(),
+  next_step: z.string().optional(),
+  curve_note: z.string().optional(),
+  perfectCount: z.number().int().optional(),
+  totalRewinds: z.number().int().optional(),
 });
 export type Report = z.infer<typeof ReportSchema>;
 
@@ -133,5 +137,9 @@ export const GameStateSchema = z.object({
   results: z.array(IncidentResultSchema),
   streak: z.number().int().min(0),
   lastPlayedDate: z.string().nullable(),
+  currentStep: z.enum(["incident", "reveal", "debrief", "closed"]).optional(),
+  disabledOptionIds: z.array(z.string()).optional(),
+  prefetchedIncident: IncidentBaseSchema.nullable().optional(),
+  curveNote: z.string().optional(),
 });
 export type GameState = z.infer<typeof GameStateSchema>;

@@ -87,3 +87,31 @@ export function rankForScore(totalScore: number): ReportRank {
   if (totalScore <= 399) return "Lead";
   return "Chief";
 }
+
+/**
+ * Generates an encouraging, analytical curve note describing progress across incidents.
+ */
+export function generateCurveNote(results: { rewindsUsed: number; points: number }[], goal?: string): string {
+  if (!results || results.length === 0) {
+    return "Case in progress. Every incident builds your muscle memory under pressure.";
+  }
+
+  const rewinds = results.map((r) => r.rewindsUsed);
+  const first = rewinds[0];
+  const last = rewinds[rewinds.length - 1];
+  const perfectCount = rewinds.filter((r) => r === 0).length;
+
+  if (rewinds.length >= 2 && first > last) {
+    return `Your rewinds dropped from ${first} to ${last} across ${results.length} incidents. Containing a threat before investigating it is turning into your first move.`;
+  }
+
+  if (perfectCount === results.length) {
+    return `Flawless decision streak across ${results.length} incident${results.length === 1 ? "" : "s"} with zero rewinds used. Your first instinct under crisis is razor-sharp.`;
+  }
+
+  if (last === 0) {
+    return `Clean resolution on the latest emergency without needing a rewind. You calibrated quickly and executed with conviction.`;
+  }
+
+  return `Adaptive decision-making through trial and error. You contained each escalating threat and stabilized the timeline.`;
+}
