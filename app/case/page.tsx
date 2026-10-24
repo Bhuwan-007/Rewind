@@ -81,8 +81,11 @@ export default function CasePage() {
       initCaseState(fallbackCase, parsedSeed.incidents[0]);
     } else {
       // Resume step and disabled options from localStorage if available
-      if (current.currentStep) {
+      // Note: If stored step is 'reveal' without an in-memory chosenOption, safely resume at 'incident'
+      if (current.currentStep && current.currentStep !== "reveal") {
         setStep(current.currentStep as FlowStep);
+      } else {
+        setStep("incident");
       }
       if (current.disabledOptionIds) {
         setDisabledOptionIds(current.disabledOptionIds);
@@ -101,10 +104,22 @@ export default function CasePage() {
     incidents: parsedSeed.incidents,
   };
 
-  const currentIncident: Incident =
-    (gameState.currentIncident as Incident) ||
+  const seedFallback =
     (parsedSeed.incidents[gameState.currentIndex] as Incident) ||
-    parsedSeed.incidents[0];
+    (parsedSeed.incidents[0] as Incident);
+
+  const rawIncident = gameState.currentIncident as Incident | null;
+  const currentIncident: Incident =
+    rawIncident &&
+    Array.isArray(rawIncident.options) &&
+    rawIncident.options.length > 0 &&
+    Array.isArray(rawIncident.evidence) &&
+    rawIncident.evidence.length > 0
+      ? rawIncident
+      : seedFallback;
+
+  // If component reloaded on reveal step without chosenOption in state, treat as incident
+  const activeStep: FlowStep = step === "reveal" && !chosenOption ? "incident" : step;
 
   const currentIndex = gameState.currentIndex || 0;
   const stability = gameState.stability ?? 50;
@@ -182,10 +197,11 @@ export default function CasePage() {
   // Update step and save to localStorage
   const transitionToStep = (nextStep: FlowStep, updatedDisabledIds?: string[]) => {
     setStep(nextStep);
+    const latestState = getGameStateSnapshot();
     saveGameState({
-      ...gameState,
+      ...latestState,
       currentStep: nextStep,
-      disabledOptionIds: updatedDisabledIds ?? disabledOptionIds,
+      disabledOptionIds: updatedDisabledIds ?? latestState.disabledOptionIds ?? disabledOptionIds,
     });
   };
 
@@ -286,7 +302,7 @@ export default function CasePage() {
     setCurrentRewindsUsed(0);
     setChosenOption(null);
     setPrefetchedIncident(null);
-    transitionToStep("incident", []);
+    setStep("incident");
   };
 
   // Download Share Card as PNG
@@ -330,7 +346,7 @@ export default function CasePage() {
       <main className="flex-1 flex flex-col items-center px-4 pt-20 pb-20">
         <div className="w-full max-w-[760px] flex flex-col items-center">
           {/* Timeline Strip (roadmap persistent on screens) */}
-          {step !== "closed" && (
+          {activeStep !== "closed" && (
             <TimelineStrip
               incidents={caseFile.incidents}
               currentIndex={currentIndex}
@@ -339,16 +355,16 @@ export default function CasePage() {
           )}
 
           {/* Stability Meter (visible on incident & reveal) */}
-          {(step === "incident" || step === "reveal") && (
+          {(activeStep === "incident" || activeStep === "reveal") && (
             <StabilityMeter
               value={stability}
-              delta={step === "reveal" && chosenOption ? chosenOption.stability_delta : undefined}
+              delta={activeStep === "reveal" && chosenOption ? chosenOption.stability_delta : undefined}
               className="my-3"
             />
           )}
 
           {/* STEP 1: INCIDENT SCREEN */}
-          {step === "incident" && (
+          {activeStep === "incident" && (
             <div className="w-full flex flex-col gap-5 my-2">
               {/* Alert Banner (Flamingo fill, 2.5px outline, hard shadow) */}
               <div className="w-full bg-flamingo border-[2.5px] border-ink rounded-[20px] shadow-card p-5 sm:p-6 text-left">
@@ -407,7 +423,7 @@ export default function CasePage() {
           )}
 
           {/* STEP 2: REVEAL SCREEN */}
-          {step === "reveal" && chosenOption && (
+          {activeStep === "reveal" && chosenOption && (
             <RevealPanel
               chosenOption={chosenOption}
               chosenLetter={chosenLetter}
@@ -418,7 +434,7 @@ export default function CasePage() {
           )}
 
           {/* STEP 3: DEBRIEF SCREEN */}
-          {step === "debrief" && (
+          {activeStep === "debrief" && (
             <DebriefCard
               debrief={currentIncident.debrief}
               pointsEarned={currentPoints}
@@ -428,7 +444,7 @@ export default function CasePage() {
           )}
 
           {/* STEP 4: CASE CLOSED SCREEN */}
-          {step === "closed" && (
+          {activeStep === "closed" && (
             <div className="w-full bg-paper border-[2.5px] border-ink rounded-[20px] shadow-card p-6 sm:p-10 flex flex-col items-center text-center my-6 gap-6">
               {/* Rank Sticker (rotated -3deg in Butter) */}
               <div className="bg-butter border-[2.5px] border-ink rounded-[14px] shadow-btn px-6 py-2 rotate-[-3deg] inline-flex items-center gap-2">

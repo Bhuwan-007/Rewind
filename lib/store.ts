@@ -136,6 +136,11 @@ function buildGameStateFromStore(store: StoreV2): GameState {
     store.cases[store.cases.length - 1] ||
     null;
 
+  const safeStep =
+    activeCase?.currentStep === "reveal"
+      ? "incident"
+      : activeCase?.currentStep || "incident";
+
   return {
     caseFile: activeCase ? activeCase.caseFile : null,
     currentIncident: activeCase ? activeCase.currentIncident : null,
@@ -146,7 +151,7 @@ function buildGameStateFromStore(store: StoreV2): GameState {
     results: activeCase ? activeCase.results : [],
     streak: store.streak,
     lastPlayedDate: store.lastPlayedDate,
-    currentStep: activeCase ? activeCase.currentStep : "incident",
+    currentStep: safeStep,
     disabledOptionIds: activeCase ? activeCase.disabledOptionIds : [],
     prefetchedIncident: activeCase ? activeCase.prefetchedIncident : null,
     curveNote: activeCase ? activeCase.curveNote : undefined,
@@ -314,11 +319,13 @@ export function saveGameState(state: GameState): void {
   const activeId = store.activeCaseId;
   if (!activeId) return;
 
-  const updatedCases = store.cases.map((c) => {
+  const updatedCases: StoredCase[] = store.cases.map((c) => {
     if (c.id === activeId) {
       const isDone = (state.currentIndex >= 4 && state.currentStep === "closed") || c.status === "done";
       return {
         ...c,
+        caseFile: state.caseFile || c.caseFile,
+        currentIncident: state.currentIncident || c.currentIncident,
         currentIndex: state.currentIndex,
         tokens: state.tokens,
         score: state.score,
@@ -387,13 +394,15 @@ export function advanceIncident(state: GameState, nextIncident: Incident): GameS
   const store = loadStoreV2();
   const activeId = store.activeCaseId;
   if (activeId) {
-    const updatedCases = store.cases.map((c) => {
+    const updatedCases: StoredCase[] = store.cases.map((c) => {
       if (c.id === activeId) {
         return {
           ...c,
           currentIndex: nextIndex,
           currentIncident: nextIncident,
           stability: 50,
+          currentStep: "incident" as const,
+          disabledOptionIds: [],
           updatedAt: new Date().toISOString(),
         };
       }
