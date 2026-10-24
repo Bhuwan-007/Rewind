@@ -4,6 +4,7 @@ import React from "react";
 import { Option } from "@/lib/schema";
 import { PrimaryButton } from "./PrimaryButton";
 import { AlertTriangle, Check, Rewind } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 export interface RevealPanelProps {
   chosenOption: Option;
@@ -22,33 +23,68 @@ export function RevealPanel({
 }: RevealPanelProps) {
   const isBest = chosenOption.is_best;
   const delta = chosenOption.stability_delta;
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="relative w-full max-w-[760px] mx-auto select-none my-2">
       {/* Glitch Ghost Background Cards for wrong answer (design.md & Figma screenshot 2) */}
       {!isBest && (
         <>
-          <div
-            className="absolute inset-0 bg-flamingo border-[2.5px] border-ink rounded-[20px] translate-x-2 -translate-y-2 pointer-events-none"
+          <motion.div
+            className="absolute inset-0 bg-flamingo border-[2.5px] border-ink rounded-[20px] pointer-events-none"
+            initial={shouldReduceMotion ? { x: 8, y: -8 } : { x: 0, y: 0 }}
+            animate={
+              shouldReduceMotion
+                ? { x: 8, y: -8 }
+                : {
+                    x: [0, 10, -6, 9, -4, 8],
+                    y: [0, -5, -7, -9, -8, -8],
+                  }
+            }
+            transition={{ duration: 0.68, ease: "easeOut" }}
             aria-hidden="true"
           />
-          <div
-            className="absolute inset-0 bg-frost border-[2.5px] border-ink rounded-[20px] -translate-x-2 -translate-y-2 pointer-events-none"
+          <motion.div
+            className="absolute inset-0 bg-frost border-[2.5px] border-ink rounded-[20px] pointer-events-none"
+            initial={shouldReduceMotion ? { x: -8, y: -8 } : { x: 0, y: 0 }}
+            animate={
+              shouldReduceMotion
+                ? { x: -8, y: -8 }
+                : {
+                    x: [0, -10, 6, -9, 4, -8],
+                    y: [0, -5, -7, -9, -8, -8],
+                  }
+            }
+            transition={{ duration: 0.68, ease: "easeOut" }}
             aria-hidden="true"
           />
         </>
       )}
 
       {/* Main Front Card */}
-      <div className="relative z-10 bg-paper border-[2.5px] border-ink rounded-[20px] shadow-card p-6 sm:p-8 flex flex-col gap-6 text-left">
+      <motion.div
+        className="relative z-10 bg-paper border-[2.5px] border-ink rounded-[20px] shadow-card p-6 sm:p-8 flex flex-col gap-6 text-left"
+        initial={shouldReduceMotion ? false : { x: 0 }}
+        animate={
+          !isBest && !shouldReduceMotion
+            ? { x: [0, -4, 4, -3, 3, -1, 1, 0] }
+            : { x: 0 }
+        }
+        transition={{ duration: 0.6, ease: "easeInOut" }}
+      >
         {/* Top Header Row */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           {/* Badge */}
           {isBest ? (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-seafoam border-[2px] border-ink font-mono font-bold text-[12px] sm:text-[13px] tracking-wider uppercase text-ink">
+            <motion.div
+              initial={shouldReduceMotion ? false : { scale: 1.4, rotate: -6, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 350, damping: 22, duration: 0.5 }}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-seafoam border-[2px] border-ink font-mono font-bold text-[12px] sm:text-[13px] tracking-wider uppercase text-ink"
+            >
               <Check className="w-4 h-4 text-ink" strokeWidth={2.5} />
               Timeline Stabilized
-            </div>
+            </motion.div>
           ) : (
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-flamingo border-[2px] border-ink font-mono font-bold text-[12px] sm:text-[13px] tracking-wider uppercase text-ink animate-pulse">
               <AlertTriangle className="w-4 h-4 text-ink" strokeWidth={2.5} />
@@ -114,7 +150,7 @@ export function RevealPanel({
             </PrimaryButton>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

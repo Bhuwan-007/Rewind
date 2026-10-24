@@ -29,6 +29,7 @@ export default function CurvePage() {
   const parsedSeed = FullCaseFileSchema.parse(cybersecuritySeed);
   const caseFile: CaseFile = gameState.caseFile || {
     goal: parsedSeed.goal,
+    reframed_goal: parsedSeed.reframed_goal ?? null,
     role: parsedSeed.role,
     tagline: parsedSeed.tagline,
     incidents: parsedSeed.incidents.map((inc) => ({

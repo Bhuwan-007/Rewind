@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { toPng } from "html-to-image";
 import { Navbar } from "@/components/Navbar";
 import { TimelineStrip } from "@/components/TimelineStrip";
 import { StabilityMeter } from "@/components/StabilityMeter";
@@ -10,6 +11,7 @@ import { OptionButton } from "@/components/OptionButton";
 import { RevealPanel } from "@/components/RevealPanel";
 import { DebriefCard } from "@/components/DebriefCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { ShareCard } from "@/components/ShareCard";
 import {
   getGameStateSnapshot,
   getServerSnapshot,
@@ -22,9 +24,9 @@ import {
   clearGameState,
 } from "@/lib/store";
 import { CaseFile, Incident, Option, FullCaseFileSchema } from "@/lib/schema";
-import { scoreForRewinds, rankForScore } from "@/lib/game";
+import { scoreForRewinds, rankForScore, nextDifficulty } from "@/lib/game";
 import cybersecuritySeed from "@/lib/seed/cybersecurity.json";
-import { AlertTriangle, Trophy, Sparkles, RotateCcw } from "lucide-react";
+import { AlertTriangle, Trophy, Sparkles, Download, ArrowLeft } from "lucide-react";
 
 type FlowStep = "incident" | "reveal" | "debrief" | "closed";
 
@@ -47,6 +49,11 @@ export default function CasePage() {
   const [disabledOptionIds, setDisabledOptionIds] = useState<string[]>([]);
   const [currentRewindsUsed, setCurrentRewindsUsed] = useState(0);
   const [prefetchedIncident, setPrefetchedIncident] = useState<Incident | null>(null);
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [reportVerdict, setReportVerdict] = useState<string>(
+    "Successfully contained the incident and restored operational integrity under pressure."
+  );
 
   // Full seed cases as instant fallback for testing
   const parsedSeed = FullCaseFileSchema.parse(cybersecuritySeed);
@@ -88,6 +95,7 @@ export default function CasePage() {
 
   const caseFile = gameState.caseFile || {
     goal: parsedSeed.goal,
+    reframed_goal: parsedSeed.reframed_goal ?? null,
     role: parsedSeed.role,
     tagline: parsedSeed.tagline,
     incidents: parsedSeed.incidents,
@@ -103,13 +111,44 @@ export default function CasePage() {
   const tokens = gameState.tokens ?? 3;
   const results = gameState.results || [];
   const score = gameState.score || 0;
+  const finalRank = rankForScore(score);
 
-  // Prefetch the next incident in background while debrief is shown
+  // Fetch report verdict on Case Closed
+  useEffect(() => {
+    if (step === "closed" && caseFile) {
+      fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: caseFile.goal,
+          role: caseFile.role,
+          rank: finalRank,
+          score,
+          results,
+          concepts: caseFile.incidents.map((inc) => inc.concept),
+        }),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.verdict) {
+            setReportVerdict(data.verdict);
+          }
+        })
+        .catch((err) => {
+          console.warn("Using fallback verdict sentence:", err);
+        });
+    }
+  }, [step, caseFile, finalRank, score, results]);
+
+  // Prefetch the next incident in background while debrief is shown with adaptive difficulty
   useEffect(() => {
     if (step === "debrief" && currentIndex < 4 && caseFile) {
       const nextIdx = currentIndex + 1;
       const nextMeta = caseFile.incidents[nextIdx];
       if (nextMeta && (!prefetchedIncident || prefetchedIncident.id !== nextMeta.id)) {
+        const adaptedDiff = nextDifficulty(currentIncident.difficulty, currentRewindsUsed);
+        const supportLevel = currentRewindsUsed >= 2 ? "high" : "normal";
+
         fetch("/api/incident", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -117,8 +156,8 @@ export default function CasePage() {
             goal: caseFile.goal,
             role: caseFile.role,
             incident: nextMeta,
-            difficulty: nextMeta.difficulty || 2,
-            support_level: currentRewindsUsed >= 2 ? "high" : "normal",
+            difficulty: adaptedDiff,
+            support_level: supportLevel,
             previous_concepts: results
               .map((r, i) => caseFile.incidents[i]?.concept)
               .filter(Boolean)
@@ -138,7 +177,7 @@ export default function CasePage() {
           .catch((err) => console.warn("Background prefetch failed:", err));
       }
     }
-  }, [step, currentIndex, caseFile, currentRewindsUsed, results, prefetchedIncident]);
+  }, [step, currentIndex, caseFile, currentIncident.difficulty, currentRewindsUsed, results, prefetchedIncident]);
 
   // Update step and save to localStorage
   const transitionToStep = (nextStep: FlowStep, updatedDisabledIds?: string[]) => {
@@ -217,6 +256,9 @@ export default function CasePage() {
     if (!prefetchedIncident) {
       try {
         const nextMeta = caseFile.incidents[nextIdx];
+        const adaptedDiff = nextDifficulty(currentIncident.difficulty, currentRewindsUsed);
+        const supportLevel = currentRewindsUsed >= 2 ? "high" : "normal";
+
         const res = await fetch("/api/incident", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -224,8 +266,8 @@ export default function CasePage() {
             goal: caseFile.goal,
             role: caseFile.role,
             incident: nextMeta,
-            difficulty: nextMeta.difficulty || 2,
-            support_level: currentRewindsUsed >= 2 ? "high" : "normal",
+            difficulty: adaptedDiff,
+            support_level: supportLevel,
           }),
         });
         if (res.ok) {
@@ -247,6 +289,26 @@ export default function CasePage() {
     transitionToStep("incident", []);
   };
 
+  // Download Share Card as PNG
+  const handleDownloadCard = async () => {
+    if (!shareCardRef.current || downloading) return;
+    try {
+      setDownloading(true);
+      const dataUrl = await toPng(shareCardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+      });
+      const link = document.createElement("a");
+      link.download = `rewind-${caseFile.goal.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-card.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Failed to export share card:", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   // Restart case
   const handleRestart = () => {
     clearGameState();
@@ -259,7 +321,6 @@ export default function CasePage() {
 
   const isLastIncident = currentIndex >= 4;
   const currentPoints = scoreForRewinds(currentRewindsUsed);
-  const finalRank = rankForScore(score);
   const perfectCount = results.filter((r) => r.rewindsUsed === 0).length;
 
   return (
@@ -369,7 +430,7 @@ export default function CasePage() {
           {/* STEP 4: CASE CLOSED SCREEN */}
           {step === "closed" && (
             <div className="w-full bg-paper border-[2.5px] border-ink rounded-[20px] shadow-card p-6 sm:p-10 flex flex-col items-center text-center my-6 gap-6">
-              {/* Rank Sticker (rotated -4deg in Butter) */}
+              {/* Rank Sticker (rotated -3deg in Butter) */}
               <div className="bg-butter border-[2.5px] border-ink rounded-[14px] shadow-btn px-6 py-2 rotate-[-3deg] inline-flex items-center gap-2">
                 <Trophy className="w-6 h-6 text-ink" strokeWidth={2.5} />
                 <span className="font-display font-extrabold text-[24px] sm:text-[28px] text-ink uppercase tracking-wide">
@@ -390,11 +451,11 @@ export default function CasePage() {
 
               {/* Key Badges & Achievements */}
               <div className="flex flex-wrap items-center justify-center gap-3">
-                <div className="bg-seafoam border-[2px] border-ink rounded-full px-4 py-1.5 font-mono text-[14px] font-bold text-ink flex items-center gap-1.5">
+                <div className="bg-seafoam border-[2px] border-ink rounded-full px-4 py-1.5 font-mono text-[14px] font-bold text-ink flex items-center gap-1.5 shadow-[1.5px_1.5px_0_#17171C]">
                   <Sparkles className="w-4 h-4 text-ink" strokeWidth={2.5} />
                   {perfectCount} Perfect {perfectCount === 1 ? "Timeline" : "Timelines"}
                 </div>
-                <div className="bg-frost border-[2px] border-ink rounded-full px-4 py-1.5 font-mono text-[14px] font-bold text-ink">
+                <div className="bg-frost border-[2px] border-ink rounded-full px-4 py-1.5 font-mono text-[14px] font-bold text-ink shadow-[1.5px_1.5px_0_#17171C]">
                   {tokens} Rewind {tokens === 1 ? "Token" : "Tokens"} Preserved
                 </div>
               </div>
@@ -416,12 +477,35 @@ export default function CasePage() {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-                <PrimaryButton fullWidth onClick={handleRestart}>
-                  <RotateCcw className="w-5 h-5 text-ink inline mr-1" strokeWidth={2.5} />
-                  Start another case
+              {/* Share Card Component */}
+              <div className="w-full flex justify-center my-2">
+                <ShareCard
+                  ref={shareCardRef}
+                  goal={caseFile.goal}
+                  role={caseFile.role}
+                  score={score}
+                  rank={finalRank}
+                  perfectCount={perfectCount}
+                  tokensPreserved={tokens}
+                  concepts={caseFile.incidents.map((inc) => inc.concept)}
+                  verdict={reportVerdict}
+                />
+              </div>
+
+              {/* Actions: Exactly ONE primary button ("Download card"), plus secondary text link */}
+              <div className="w-full flex flex-col items-center gap-3 pt-2">
+                <PrimaryButton fullWidth onClick={handleDownloadCard} disabled={downloading}>
+                  <Download className="w-5 h-5 text-ink inline mr-2" strokeWidth={2.5} />
+                  {downloading ? "Exporting card..." : "Download card"}
                 </PrimaryButton>
+
+                <button
+                  type="button"
+                  onClick={handleRestart}
+                  className="font-sans font-semibold text-[15px] text-mute hover:text-ink underline transition-colors cursor-pointer py-1"
+                >
+                  Start another skill
+                </button>
               </div>
             </div>
           )}
