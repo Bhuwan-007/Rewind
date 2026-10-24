@@ -1,4 +1,5 @@
 import React from "react";
+import { Check, X } from "lucide-react";
 
 export type OptionState = "default" | "selected" | "correct" | "wrong" | "faded";
 
@@ -82,7 +83,13 @@ export function OptionButton({
           }
         `}
       >
-        {state === "correct" ? "✓" : state === "wrong" ? "✕" : letter}
+        {state === "correct" ? (
+          <Check className="w-5 h-5 text-seafoam" strokeWidth={2.5} />
+        ) : state === "wrong" ? (
+          <X className="w-5 h-5 text-flamingo" strokeWidth={2.5} />
+        ) : (
+          letter
+        )}
       </span>
 
       {/* Option body text */}

@@ -15,6 +15,10 @@ export const INITIAL_GAME_STATE: GameState = {
   lastPlayedDate: null,
 };
 
+// Cached snapshot for useSyncExternalStore to maintain stable references
+let currentSnapshot: GameState = INITIAL_GAME_STATE;
+let isSnapshotInitialized = false;
+
 /**
  * Loads game state from localStorage, validating against GameStateSchema.
  * Returns INITIAL_GAME_STATE if not found or invalid.
@@ -42,6 +46,24 @@ export function loadGameState(): GameState {
 }
 
 /**
+ * Returns a stable cached snapshot of the game state for useSyncExternalStore.
+ */
+export function getGameStateSnapshot(): GameState {
+  if (typeof window === "undefined") {
+    return INITIAL_GAME_STATE;
+  }
+  if (!isSnapshotInitialized) {
+    currentSnapshot = loadGameState();
+    isSnapshotInitialized = true;
+  }
+  return currentSnapshot;
+}
+
+export function getServerSnapshot(): GameState {
+  return INITIAL_GAME_STATE;
+}
+
+/**
  * Persists game state to localStorage under STORAGE_KEY.
  */
 export function saveGameState(state: GameState): void {
@@ -49,6 +71,7 @@ export function saveGameState(state: GameState): void {
 
   try {
     const validated = GameStateSchema.parse(state);
+    currentSnapshot = validated;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(validated));
     notifySubscribers();
   } catch (err) {
@@ -60,6 +83,7 @@ export function saveGameState(state: GameState): void {
  * Clears saved game state from localStorage and returns INITIAL_GAME_STATE.
  */
 export function clearGameState(): GameState {
+  currentSnapshot = INITIAL_GAME_STATE;
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(STORAGE_KEY);
     notifySubscribers();
@@ -79,8 +103,24 @@ function notifySubscribers() {
 
 export function subscribeToStore(listener: Listener): () => void {
   listeners.add(listener);
+
+  // Listen to changes from other tabs/windows
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY) {
+      currentSnapshot = loadGameState();
+      listener();
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+
   return () => {
     listeners.delete(listener);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
   };
 }
 

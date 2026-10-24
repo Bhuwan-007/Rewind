@@ -1,29 +1,29 @@
 "use client";
 
-import React, { useEffect, useState, useSyncExternalStore } from "react";
-import Link from "next/navigation";
+import React, { useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { loadGameState, subscribeToStore, clearGameState } from "@/lib/store";
+import {
+  getGameStateSnapshot,
+  getServerSnapshot,
+  subscribeToStore,
+  clearGameState,
+} from "@/lib/store";
+import { Flame, Star, Rewind } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Subscribe to store reactively across all tabs and state changes
-  const [mounted, setMounted] = useState(false);
+  // Stable snapshot cached in lib/store.ts prevents infinite loop
   const state = useSyncExternalStore(
     subscribeToStore,
-    () => loadGameState(),
-    () => loadGameState()
+    getGameStateSnapshot,
+    getServerSnapshot
   );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const streak = mounted ? state.streak : 0;
-  const score = mounted ? state.score : 0;
-  const tokens = mounted ? state.tokens : 3;
+  const streak = state.streak;
+  const score = state.score;
+  const tokens = state.tokens;
 
   const isCaseActive = pathname?.startsWith("/case");
   const isCurveActive = pathname?.startsWith("/curve");
@@ -42,13 +42,13 @@ export function Navbar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-[64px] bg-ink text-chalk z-50 flex items-center justify-between px-4 sm:px-8 border-b-2 border-ink">
-        {/* Left: Logo */}
+        {/* Left: Logo with Rewind Icon */}
         <div
           onClick={() => router.push("/")}
-          className="cursor-pointer flex items-center gap-2 group select-none"
+          className="cursor-pointer flex items-center gap-2.5 group select-none"
         >
-          <span className="w-7 h-7 rounded-[8px] bg-butter border-[2px] border-ink flex items-center justify-center text-ink font-black text-sm group-hover:scale-105 transition-transform">
-            ⏪
+          <span className="w-8 h-8 rounded-[9px] bg-butter border-[2.5px] border-ink flex items-center justify-center text-ink shadow-[2px_2px_0_#17171C] group-hover:scale-105 transition-transform">
+            <Rewind className="w-4 h-4 fill-ink" strokeWidth={2.5} />
           </span>
           <span className="font-display font-extrabold text-[22px] tracking-[-0.01em] text-chalk">
             Rewind
@@ -93,33 +93,37 @@ export function Navbar() {
         </nav>
 
         {/* Right: Stats Cluster */}
-        <div className="flex items-center gap-3 sm:gap-4 select-none">
-          {/* Streak */}
-          <div className="flex items-center gap-1 font-mono text-[15px] font-semibold text-butter" title="Day Streak">
-            <span className="text-butter text-[16px]">🔥</span>
+        <div className="flex items-center gap-3.5 sm:gap-5 select-none">
+          {/* Streak: Flame */}
+          <div className="flex items-center gap-1.5 font-mono text-[16px] font-semibold text-butter" title="Day Streak">
+            <Flame className="w-5 h-5 fill-butter text-butter" strokeWidth={2.5} />
             <span>{streak}</span>
           </div>
 
-          {/* Score */}
-          <div className="flex items-center gap-1 font-mono text-[15px] font-semibold text-chalk" title="Score">
-            <span className="text-butter text-[16px]">★</span>
+          {/* Score: Star */}
+          <div className="flex items-center gap-1.5 font-mono text-[16px] font-semibold text-chalk" title="Total Score">
+            <Star className="w-5 h-5 fill-butter text-butter" strokeWidth={2.5} />
             <span>{score}</span>
           </div>
 
-          {/* Rewind Tokens (3 frost circles) */}
-          <div className="flex items-center gap-1" title={`${tokens} Rewind Tokens Remaining`}>
+          {/* Rewind Tokens: 3 Frost Circles */}
+          <div className="flex items-center gap-1.5" title={`${tokens} Rewind Tokens Remaining`}>
             {[0, 1, 2].map((idx) => {
               const isAvailable = idx < tokens;
               return (
                 <span
                   key={idx}
                   className={`
-                    w-5 h-5 rounded-full border-[2px] border-ink flex items-center justify-center text-[10px] font-bold leading-none
-                    ${isAvailable ? "bg-frost text-ink" : "bg-stone/40 border-stone/60 text-transparent"}
+                    w-6 h-6 rounded-full border-[2px] border-ink flex items-center justify-center
+                    ${
+                      isAvailable
+                        ? "bg-frost text-ink shadow-[1px_1px_0_#17171C]"
+                        : "bg-stone/30 border-stone/50 text-transparent"
+                    }
                     transition-all
                   `}
                 >
-                  {isAvailable ? "⏪" : ""}
+                  {isAvailable && <Rewind className="w-3 h-3 fill-ink text-ink" strokeWidth={2.5} />}
                 </span>
               );
             })}
@@ -132,7 +136,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => router.push("/case")}
-          className={`flex flex-col items-center justify-center px-4 py-1 rounded-full text-[13px] font-semibold ${
+          className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-full text-[13px] font-semibold ${
             isCaseActive ? "bg-butter text-ink" : "text-chalk"
           }`}
         >
@@ -141,7 +145,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => router.push("/curve")}
-          className={`flex flex-col items-center justify-center px-4 py-1 rounded-full text-[13px] font-semibold ${
+          className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-full text-[13px] font-semibold ${
             isCurveActive ? "bg-butter text-ink" : "text-chalk"
           }`}
         >
@@ -150,7 +154,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={handleNewSkillClick}
-          className={`flex flex-col items-center justify-center px-4 py-1 rounded-full text-[13px] font-semibold ${
+          className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-full text-[13px] font-semibold ${
             isNewSkillActive ? "bg-butter text-ink" : "text-chalk"
           }`}
         >

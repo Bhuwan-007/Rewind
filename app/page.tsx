@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { initCaseState } from "@/lib/store";
 import { CaseFile, Incident } from "@/lib/schema";
+import { Clock, Rewind, Check } from "lucide-react";
 
 const EXAMPLE_CHIPS = ["Cybersecurity", "UI/UX", "SQL", "DevOps"];
 
@@ -70,18 +71,18 @@ export default function Home() {
           <div className="relative mb-8 w-full flex justify-center">
             {/* Tilted Sticker 1: Clock in Frost */}
             <div
-              className="absolute -top-6 left-2 sm:left-8 w-13 h-13 sm:w-14 sm:h-14 rounded-[14px] bg-frost border-[2.5px] border-ink shadow-btn -rotate-12 flex items-center justify-center text-2xl select-none pointer-events-none"
+              className="absolute -top-6 left-2 sm:left-8 w-13 h-13 sm:w-14 sm:h-14 rounded-[14px] bg-frost border-[2.5px] border-ink shadow-btn -rotate-12 flex items-center justify-center text-ink select-none pointer-events-none"
               aria-hidden="true"
             >
-              ⏱️
+              <Clock className="w-7 h-7 text-ink" strokeWidth={2.5} />
             </div>
 
             {/* Tilted Sticker 2: Rewind Arrow in Flamingo */}
             <div
-              className="absolute -top-5 right-2 sm:right-8 w-13 h-13 sm:w-14 sm:h-14 rounded-[14px] bg-flamingo border-[2.5px] border-ink shadow-btn rotate-12 flex items-center justify-center text-xl font-bold select-none pointer-events-none"
+              className="absolute -top-5 right-2 sm:right-8 w-13 h-13 sm:w-14 sm:h-14 rounded-[14px] bg-flamingo border-[2.5px] border-ink shadow-btn rotate-12 flex items-center justify-center text-ink select-none pointer-events-none"
               aria-hidden="true"
             >
-              ⏪
+              <Rewind className="w-7 h-7 fill-ink text-ink" strokeWidth={2.5} />
             </div>
 
             {/* H1 Heading (2 lines, Bricolage Grotesque 800) */}
@@ -161,12 +162,18 @@ export default function Home() {
           </div>
 
           {/* Reassurance text */}
-          <div className="mt-6 flex items-center justify-center gap-4 text-mute text-[14px] sm:text-[15px] font-medium">
-            <span>✓ 5 escalating emergencies</span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-mute text-[14px] sm:text-[15px] font-medium">
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-ink inline" strokeWidth={2.5} /> 5 escalating emergencies
+            </span>
             <span>•</span>
-            <span>✓ 3 rewind tokens</span>
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-ink inline" strokeWidth={2.5} /> 3 rewind tokens
+            </span>
             <span>•</span>
-            <span>✓ 1 decision at a time</span>
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-ink inline" strokeWidth={2.5} /> 1 decision at a time
+            </span>
           </div>
         </div>
       </main>
