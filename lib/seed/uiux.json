@@ -1,0 +1,362 @@
+{
+  "goal": "UI/UX Design",
+  "role": "Lead Product Designer",
+  "tagline": "Conversion collapsed 74% right after Black Friday deploy. Save the checkout flow.",
+  "incidents": [
+    {
+      "id": "ui-1",
+      "order": 1,
+      "title": "Invisible Primary Action",
+      "setting": "Black Friday Mobile Checkout",
+      "concept": "Visual hierarchy & CTA affordance",
+      "difficulty": 1,
+      "hook": "Users are adding items to cart, but only 4% ever tap the checkout button.",
+      "alert": "CONVERSION CRASH — Mobile cart checkout rate down 72% post redesign",
+      "clock": "T+00:04:30 into morning shopping rush",
+      "stakes_line": "$120,000 in abandoned carts accumulates every fifteen minutes.",
+      "evidence": [
+        {
+          "kind": "metric",
+          "label": "HOTJAR HEATMAP",
+          "content": "Users repeatedly tapping the promotional coupon banner instead of checkout CTA."
+        },
+        {
+          "kind": "screen",
+          "label": "VIEWPORT WIREFRAME",
+          "content": "Checkout button styled as gray ghost outline pushed below the fold on iOS Safari."
+        },
+        {
+          "kind": "message",
+          "label": "CUSTOMER SUPPORT",
+          "content": "Support rep: Chat queue is filled with elderly shoppers asking how to pay."
+        }
+      ],
+      "question": "What is the single highest-impact design intervention?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Pin a high-contrast solid sticky CTA with clear label 'Proceed to Checkout' at screen bottom.",
+          "is_best": true,
+          "stability_delta": 40,
+          "outcome": "Checkout completion immediately surges back above 68% across all devices.",
+          "why": "Sticky high-contrast buttons guarantee clear affordance regardless of device scroll height."
+        },
+        {
+          "id": "B",
+          "text": "Add an animated popup modal prompting users to enter their email before paying.",
+          "is_best": false,
+          "stability_delta": -35,
+          "outcome": "Cart abandonment increases by an additional 15% due to modal fatigue.",
+          "why": "Interruptive modals add friction at the highest-anxiety step in the funnel."
+        },
+        {
+          "id": "C",
+          "text": "Redesign the entire cart color scheme and font hierarchy from scratch.",
+          "is_best": false,
+          "stability_delta": -25,
+          "outcome": "Hours of design debate while the Black Friday shopping window closes.",
+          "why": "Complete redesign during an active conversion crisis introduces unknown risks."
+        },
+        {
+          "id": "D",
+          "text": "Make the coupon promo banner flash brightly to guide user attention down.",
+          "is_best": false,
+          "stability_delta": -15,
+          "outcome": "Users tap the coupon even more, confusing checkout with discount entry.",
+          "why": "Flashing elements worsen cognitive overload and distract from the primary conversion goal."
+        }
+      ],
+      "debrief": {
+        "concept": "Unambiguous visual hierarchy for primary actions",
+        "rule_of_thumb": "Make the primary action impossible to miss: one button, solid color, above the fold.",
+        "why_best_works": "Clear contrast and persistent positioning eliminate scanning friction for buyers.",
+        "real_world_note": "Amazon one-click checkout succeeded by removing all competing visual elements.",
+        "next_teaser": "Users can pay, but return rates are spiking because variant selection is ambiguous."
+      }
+    },
+    {
+      "id": "ui-2",
+      "order": 2,
+      "title": "Ambiguous Variant Selector",
+      "setting": "Product Detail Page",
+      "concept": "Explicit selection state feedback",
+      "difficulty": 2,
+      "hook": "Customers ordering shoes are receiving wrong sizes and returning 52% of orders.",
+      "alert": "RETURN RATE SPIKE — 52% of shoes returned due to wrong size ordered",
+      "clock": "T+00:14:22 post-morning batch",
+      "stakes_line": "Warehouse restocking fees and shipping losses will bankrupt promotional margins.",
+      "evidence": [
+        {
+          "kind": "screen",
+          "label": "SIZE PICKER COMPONENT",
+          "content": "Selected size chip uses light gray border; unselected chips use slightly lighter gray."
+        },
+        {
+          "kind": "log",
+          "label": "SESSION REPLAY LOG",
+          "content": "Users tapping size 9, then tapping size 10 to check if state changed, then buying 9."
+        },
+        {
+          "kind": "message",
+          "label": "WAREHOUSE OPS",
+          "content": "Ops Manager: Over 400 return boxes arrived this morning marked 'Size not what I clicked'."
+        }
+      ],
+      "question": "How do you eliminate the selection ambiguity immediately?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Use heavy contrast fill with checkmark for selected state and plain text for unselected.",
+          "is_best": true,
+          "stability_delta": 35,
+          "outcome": "Session confusion drops to zero; return rate normalizes to baseline under 4%.",
+          "why": "Dual visual indicators (bold fill plus checkmark icon) eliminate state ambiguity."
+        },
+        {
+          "id": "B",
+          "text": "Add a tooltip explaining that light gray means selected and white means available.",
+          "is_best": false,
+          "stability_delta": -30,
+          "outcome": "Users do not read tooltips on mobile touchscreens; wrong orders continue.",
+          "why": "Good UI communicates state intuitively without requiring instructional manual reading."
+        },
+        {
+          "id": "C",
+          "text": "Replace the chips with a 20-item native dropdown select menu.",
+          "is_best": false,
+          "stability_delta": 5,
+          "outcome": "Functional, but tap friction increases by 2 taps and conversion drops 8%.",
+          "why": "Dropdowns hide available options and increase interaction cost compared to chips."
+        },
+        {
+          "id": "D",
+          "text": "Prompt user with a confirmation modal: 'Are you absolutely sure you want size 9?'",
+          "is_best": false,
+          "stability_delta": -20,
+          "outcome": "Adds checkout anxiety and causes buyers to second-guess their purchase.",
+          "why": "Confirmation dialogs should be reserved for irreversible actions, not routine selections."
+        }
+      ],
+      "debrief": {
+        "concept": "Multi-signal state feedback",
+        "rule_of_thumb": "Never rely on subtle color tint alone to show selection; add shape or icon contrast.",
+        "why_best_works": "Multiple perceptual signals ensure clarity across different screen brightness levels.",
+        "real_world_note": "Material Design and Apple HIG mandate distinct elevation and shape for active states.",
+        "next_teaser": "Shoppers can select sizes, but blind users are filing ADA accessibility complaints."
+      }
+    },
+    {
+      "id": "ui-3",
+      "order": 3,
+      "title": "Screen Reader Traps & ADA Crisis",
+      "setting": "Customer Review & Filter Section",
+      "concept": "Semantic HTML & accessible keyboard navigation",
+      "difficulty": 3,
+      "hook": "Assistive tech users cannot close the filter drawer and legal received an ADA warning.",
+      "alert": "ADA COMPLIANCE ALERT — Legal notice of non-compliance received from advocacy group",
+      "clock": "T+00:26:00 legal notification window",
+      "stakes_line": "Statutory damages and brand reputation threatened if not remediated immediately.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "ACCESSIBILITY AUDIT",
+          "content": "Filter drawer lacks role='dialog', aria-modal='true', and focus-trap management."
+        },
+        {
+          "kind": "screen",
+          "label": "DOM INSPECTOR",
+          "content": "Close button is rendered as `<div onClick=close()>X</div>` with no aria-label or tabindex."
+        },
+        {
+          "kind": "message",
+          "label": "LEGAL COUNSEL",
+          "content": "General Counsel: Fix the focus trap and keyboard accessibility today to cure violation."
+        }
+      ],
+      "question": "What is the correct accessibility engineering fix?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Refactor to semantic `<button>`, add aria-label='Close filters', and trap focus within modal.",
+          "is_best": true,
+          "stability_delta": 35,
+          "outcome": "Lighthouse accessibility score jumps to 100; screen reader navigation passes audit.",
+          "why": "Semantic elements provide built-in keyboard accessibility and screen reader hooks."
+        },
+        {
+          "id": "B",
+          "text": "Install a third-party accessibility overlay widget snippet into the HTML head tag.",
+          "is_best": false,
+          "stability_delta": -35,
+          "outcome": "Blind users complain widget breaks their readers; accessibility lawsuits increase.",
+          "why": "Accessibility overlays do not fix broken underlying DOM semantics and anger users."
+        },
+        {
+          "id": "C",
+          "text": "Remove the filter drawer entirely and only show unfiltered product listings.",
+          "is_best": false,
+          "stability_delta": -25,
+          "outcome": "Users cannot narrow 10,000 products; average search time climbs to 14 minutes.",
+          "why": "Destroying core functionality rather than making it accessible degrades everyone's UX."
+        },
+        {
+          "id": "D",
+          "text": "Add a disclaimer text in footer saying 'Best experienced with Google Chrome'.",
+          "is_best": false,
+          "stability_delta": -30,
+          "outcome": "Does nothing to address legal liability or assist disabled customers.",
+          "why": "Disclaimers do not satisfy ADA compliance or WCAG 2.1 AA accessibility standards."
+        }
+      ],
+      "debrief": {
+        "concept": "Semantic foundations over superficial overlays",
+        "rule_of_thumb": "Use real HTML buttons and manage keyboard focus; never fake UI with clickable divs.",
+        "why_best_works": "Native browser elements carry decades of assistive accessibility technology support.",
+        "real_world_note": "Major retailers faced multi-million dollar class actions over inaccessible drawer menus.",
+        "next_teaser": "Legal is satisfied, but marketing added deceptive countdown timers causing churn."
+      }
+    },
+    {
+      "id": "ui-4",
+      "order": 4,
+      "title": "Dark Pattern Backlash",
+      "setting": "Subscription Upsell Step",
+      "concept": "Honest UX & opt-in trust mechanics",
+      "difficulty": 4,
+      "hook": "Fake urgency countdown and pre-checked monthly subscriptions trigger viral tweetstorm.",
+      "alert": "PR DISASTER — Viral tweet #ScammyCheckout reaches 4.2M views",
+      "clock": "T+00:38:15 trending on social media",
+      "stakes_line": "Brand trust is collapsing, and credit card processors threaten chargeback fines.",
+      "evidence": [
+        {
+          "kind": "screen",
+          "label": "CHECKOUT CHECKBOX",
+          "content": "Pre-checked box: 'Enroll me in $29.99/mo VIP Club' hidden in tiny 10px gray font."
+        },
+        {
+          "kind": "metric",
+          "label": "CHARGEBACK METRIC",
+          "content": "Stripe chargeback dispute rate hits 1.8% (Visa cutoff threshold is 1.0%)."
+        },
+        {
+          "kind": "message",
+          "label": "HEAD OF MARKETING",
+          "content": "Marketing: The pre-check raised revenue for 2 weeks, but now our ratings dropped to 1.4 stars."
+        }
+      ],
+      "question": "What is the ethical, long-term brand restoration decision?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Remove pre-checked opt-in, make subscription explicit choice, and refund disputed charges.",
+          "is_best": true,
+          "stability_delta": 30,
+          "outcome": "Public sentiment shifts positively; chargeback rates plummet below penalty thresholds.",
+          "why": "Honest opt-in builds enduring customer lifetime value and stops processor bans."
+        },
+        {
+          "id": "B",
+          "text": "Make the unsubscribe link harder to find to prevent existing members from leaving.",
+          "is_best": false,
+          "stability_delta": -40,
+          "outcome": "FTC launches consumer protection inquiry; payment gateway freezes funds.",
+          "why": "Roach motel dark patterns attract aggressive regulatory enforcement and fines."
+        },
+        {
+          "id": "C",
+          "text": "Change the countdown timer to restart every 3 minutes so it looks real.",
+          "is_best": false,
+          "stability_delta": -25,
+          "outcome": "Tech-savvy users record the loop, posting more evidence of fake urgency.",
+          "why": "Fake countdown timers destroy credibility the moment a shopper refreshes the page."
+        },
+        {
+          "id": "D",
+          "text": "Offer a 10% coupon to anyone who deletes their critical tweet.",
+          "is_best": false,
+          "stability_delta": -20,
+          "outcome": "Screenshots of the bribe get retweeted, compounding brand embarrassment.",
+          "why": "Bribing critics without fixing deceptive product design backfires publicly."
+        }
+      ],
+      "debrief": {
+        "concept": "Transparent value exchange vs. manipulative dark patterns",
+        "rule_of_thumb": "Subscriptions must always be explicit opt-in; tricks create chargebacks, not loyalty.",
+        "why_best_works": "Customers gladly pay for value they consciously selected; deception produces churn.",
+        "real_world_note": "FTC 'Click to Cancel' regulations penalize deceptive recurring billing workflows.",
+        "next_teaser": "Final challenge: five independent teams built conflicting navigation and broken states."
+      }
+    },
+    {
+      "id": "ui-5",
+      "order": 5,
+      "title": "Design System Fragmented Chaos",
+      "setting": "Global Multi-Platform App Suite",
+      "concept": "Design tokens & unified component architecture",
+      "difficulty": 5,
+      "hook": "12 different button styles, conflicting primary colors, and broken responsive breakpoints.",
+      "alert": "PRODUCTION DRIFT — 42 conflicting CSS button classes detected in production build",
+      "clock": "T+00:54:10 architecture review",
+      "stakes_line": "Release velocity has slowed to a crawl as teams rewrite custom CSS for every view.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "CSS BUNDLE AUDIT",
+          "content": "Found 18 variations of blue hex codes and 7 contradictory modal frameworks in bundle."
+        },
+        {
+          "kind": "screen",
+          "label": "COMPONENT MATRIX",
+          "content": "Settings page looks like Android 2014, Checkout looks like iOS, Home looks custom."
+        },
+        {
+          "kind": "message",
+          "label": "VP OF PRODUCT",
+          "content": "VP Product: Ship velocity is down 60%. We need a single unified source of truth now."
+        }
+      ],
+      "question": "What is the strategic foundation to unify the design system forever?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Establish centralized design tokens for colors/spacing, deprecate rogue classes, enforce lint gates.",
+          "is_best": true,
+          "stability_delta": 35,
+          "outcome": "CSS bundle size shrinks 48%; development speed doubles with consistent components.",
+          "why": "Centralized design tokens decouple styles from implementations and create single source of truth."
+        },
+        {
+          "id": "B",
+          "text": "Allow each team to maintain their own custom style guide in Figma without syncing.",
+          "is_best": false,
+          "stability_delta": -35,
+          "outcome": "Fragmentation accelerates until the product looks like five separate websites.",
+          "why": "Decentralized un-synced design libraries guarantee divergent user experiences."
+        },
+        {
+          "id": "C",
+          "text": "Ban all CSS classes and force developers to write inline HTML styles.",
+          "is_best": false,
+          "stability_delta": -30,
+          "outcome": "Bundle sizes skyrocket; maintaining global theme adjustments becomes impossible.",
+          "why": "Inline styles destroy caching, reusability, and maintainability at scale."
+        },
+        {
+          "id": "D",
+          "text": "Schedule a monthly committee meeting to manually approve every UI change.",
+          "is_best": false,
+          "stability_delta": -15,
+          "outcome": "Design bottleneck paralyzes releases while rogue styling continues in branches.",
+          "why": "Bureaucratic gatekeeping fails without automated design token tooling."
+        }
+      ],
+      "debrief": {
+        "concept": "Design tokens as the single source of truth",
+        "rule_of_thumb": "Tokenize your design primitives; automate consistency at compile time, not in committee.",
+        "why_best_works": "Tokens bridge design tools and codebases with zero translation friction.",
+        "real_world_note": "Figma Tokens and Tailwind config enable thousands of engineers to share one design language.",
+        "next_teaser": "Case closed! The design system is harmonized and conversion has recovered."
+      }
+    }
+  ]
+}

@@ -1,0 +1,362 @@
+{
+  "goal": "Cybersecurity",
+  "role": "Lead Incident Responder",
+  "tagline": "Fuel pipeline billing is failing. Stop the breach before critical operations halt.",
+  "incidents": [
+    {
+      "id": "sec-1",
+      "order": 1,
+      "title": "Credential Stuffing Spike",
+      "setting": "Customer Auth Gateway",
+      "concept": "Rate limiting & IP reputation",
+      "difficulty": 1,
+      "hook": "100,000 failed logins per minute from distributed bot IPs.",
+      "alert": "AUTH GATEWAY CPU 98% — High-volume credential stuffing detected",
+      "clock": "T+00:02:14 since anomaly trigger",
+      "stakes_line": "Customer account lockouts threaten morning gas pump terminals.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "NGINX ERROR LOG",
+          "content": "POST /api/login HTTP/1.1 401 Unauthorized count=124000 origin=ASN42881"
+        },
+        {
+          "kind": "metric",
+          "label": "LATENCY / FAIL RATE",
+          "content": "Auth API p99 latency spiked from 45ms to 1840ms. Error rate 84%."
+        },
+        {
+          "kind": "message",
+          "label": "SOC SLACK CHANNEL",
+          "content": "Ops Lead: Retail terminals report login timeouts. What is our first mitigation?"
+        }
+      ],
+      "question": "What is your immediate tactical move?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Apply immediate IP reputation blocklist and adaptive rate-limiting at edge.",
+          "is_best": true,
+          "stability_delta": 40,
+          "outcome": "Bot volume drops 92% instantly; valid traffic resumes flowing to auth cluster.",
+          "why": "Edge rate limiting sheds distributed volume without burdening origin services."
+        },
+        {
+          "id": "B",
+          "text": "Shut down the customer authentication service entirely until root cause is identified.",
+          "is_best": false,
+          "stability_delta": -35,
+          "outcome": "Total outage across all 4,200 stations; executive panic ensues.",
+          "why": "Self-inflicted denial of service creates the exact disaster the attacker wanted."
+        },
+        {
+          "id": "C",
+          "text": "Force an immediate password reset email to all 2.4 million customers.",
+          "is_best": false,
+          "stability_delta": -25,
+          "outcome": "Mail servers crash under queue overload; customer support phone lines collapse.",
+          "why": "Mass password resets create secondary outages before containment is in place."
+        },
+        {
+          "id": "D",
+          "text": "Spin up additional backend authentication servers to absorb the bot traffic.",
+          "is_best": false,
+          "stability_delta": 10,
+          "outcome": "Database connections saturate within minutes; cloud bill spikes $18,000.",
+          "why": "Scaling against an unbounded botnet only shifts the bottleneck to the database."
+        }
+      ],
+      "debrief": {
+        "concept": "Isolate volume at edge before investigating",
+        "rule_of_thumb": "Filter malicious volume at the perimeter; never make your origin absorb DDoS.",
+        "why_best_works": "Edge defenses absorb packet volume with zero overhead on backend databases.",
+        "real_world_note": "Akamai and Cloudflare edge scrubbing mitigate 99% of bulk credential attacks.",
+        "next_teaser": "The perimeter held, but internal telemetry reveals an insider host behaving strangely."
+      }
+    },
+    {
+      "id": "sec-2",
+      "order": 2,
+      "title": "Ransomware Lateral Pivot",
+      "setting": "Corporate Workstation Subnet",
+      "concept": "Host network segmentation",
+      "difficulty": 2,
+      "hook": "SMB probes spreading through accounting laptops towards domain controllers.",
+      "alert": "EDR CRITICAL — Mimikatz memory dump detected on finance workstation",
+      "clock": "T+00:08:45 into containment phase",
+      "stakes_line": "Active Directory compromise means total network lockout within the hour.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "EDR TELEMETRY",
+          "content": "lsass.exe memory read by unknown binary C:\\Users\\acct1\\AppData\\Temp\\svchost.exe"
+        },
+        {
+          "kind": "screen",
+          "label": "NETWORK TOPOLOGY",
+          "content": "Host 10.14.2.88 executing outbound TCP 445 sweeps against 10.14.0.0/16 subnet."
+        },
+        {
+          "kind": "message",
+          "label": "CISO DIRECT MESSAGE",
+          "content": "CISO: Do not let them touch the primary domain controller. What is your call?"
+        }
+      ],
+      "question": "What is the primary containment action?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Isolate the infected host network interface via EDR and sever VLAN cross-talk.",
+          "is_best": true,
+          "stability_delta": 35,
+          "outcome": "Host is quarantined instantly; lateral sweeps hit firewall drop counters.",
+          "why": "Network-level host isolation arrests spread while preserving memory for forensics."
+        },
+        {
+          "id": "B",
+          "text": "Reboot the infected machine into safe mode to terminate malware processes.",
+          "is_best": false,
+          "stability_delta": -30,
+          "outcome": "Volatile RAM evidence wiped; persistence runkey re-infects host on boot.",
+          "why": "Rebooting destroys invaluable memory evidence and triggers persistence mechanisms."
+        },
+        {
+          "id": "C",
+          "text": "Email the finance department asking employees to disconnect Wi-Fi cables.",
+          "is_best": false,
+          "stability_delta": -20,
+          "outcome": "Too slow; attacker compromises 14 more machines before anyone reads email.",
+          "why": "Human-dependent mitigation during an active automated worm fails every time."
+        },
+        {
+          "id": "D",
+          "text": "Change the domain admin password in Active Directory console.",
+          "is_best": false,
+          "stability_delta": 5,
+          "outcome": "Password updated, but existing Kerberos golden tickets remain valid and usable.",
+          "why": "Password change does not invalidate active sessions or cached Kerberos tickets."
+        }
+      ],
+      "debrief": {
+        "concept": "Host network isolation before remediation",
+        "rule_of_thumb": "Cut the cord at the hypervisor or EDR; never reboot an actively exploited host.",
+        "why_best_works": "Preserves volatile artifacts while cutting off command-and-control channels.",
+        "real_world_note": "Colonial Pipeline halted fuel delivery largely due to lack of OT/IT isolation.",
+        "next_teaser": "Workstations are safe, but cloud audit logs show an AWS access key exfiltrating data."
+      }
+    },
+    {
+      "id": "sec-3",
+      "order": 3,
+      "title": "Cloud S3 Exfiltration",
+      "setting": "AWS Production Account",
+      "concept": "IAM key invalidation & bucket policy lock",
+      "difficulty": 3,
+      "hook": "An engineer's leaked API key is dumping customer transaction records.",
+      "alert": "GUARDDUTY — Unusual S3 GetObject volume from unknown IP in Eastern Europe",
+      "clock": "T+00:19:10 into breach response",
+      "stakes_line": "500 GB of plaintext billing records will trigger massive regulatory penalties.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "CLOUDTRAIL EVENT",
+          "content": "eventName: GetObject, bucket: corp-billing-archive, userAgent: aws-cli/2.11"
+        },
+        {
+          "kind": "metric",
+          "label": "EGRESS BANDWIDTH",
+          "content": "Outbound S3 egress at 1.4 Gbps. 180 GB transferred in last 12 minutes."
+        },
+        {
+          "kind": "message",
+          "label": "LEGAL TEAM",
+          "content": "Legal: If personal identifiable records leak publicly, mandatory breach disclosure begins."
+        }
+      ],
+      "question": "How do you halt the data exfiltration immediately?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Deactivate IAM access key, apply explicit Deny S3 bucket policy, revoke sessions.",
+          "is_best": true,
+          "stability_delta": 35,
+          "outcome": "API requests immediately return 403 Forbidden; egress flatlines to zero.",
+          "why": "Combining IAM key deactivation with an explicit bucket deny halts all active access."
+        },
+        {
+          "id": "B",
+          "text": "Delete the S3 bucket to ensure no further records can be accessed.",
+          "is_best": false,
+          "stability_delta": -40,
+          "outcome": "10 years of business financial records permanently erased; production down.",
+          "why": "Destructive containment destroys your company's own primary business data."
+        },
+        {
+          "id": "C",
+          "text": "Message the engineer on Slack asking if they shared their credentials.",
+          "is_best": false,
+          "stability_delta": -30,
+          "outcome": "Exfiltration finishes downloading all 500 GB while waiting for a reply.",
+          "why": "Never investigate before cutting the active unauthorized access conduit."
+        },
+        {
+          "id": "D",
+          "text": "Download the bucket contents to your local laptop to see what is missing.",
+          "is_best": false,
+          "stability_delta": -15,
+          "outcome": "Saturates company VPN bandwidth and violates corporate compliance policies.",
+          "why": "Duplicating sensitive data to unapproved endpoints compounds the legal exposure."
+        }
+      ],
+      "debrief": {
+        "concept": "Kill credentials and enforce explicit deny",
+        "rule_of_thumb": "Deactivate identity credentials first, then attach explicit Deny resource policies.",
+        "why_best_works": "Explicit Deny overrides all existing allow policies across federated roles.",
+        "real_world_note": "Capital One S3 breach stemmed from misconfigured WAF IAM role permissions.",
+        "next_teaser": "Cloud access is locked, but the CI/CD pipeline just built a suspicious binary."
+      }
+    },
+    {
+      "id": "sec-4",
+      "order": 4,
+      "title": "Supply Chain Dependency Poisoning",
+      "setting": "GitHub Enterprise CI/CD Pipeline",
+      "concept": "Dependency pinning & artifact hash verification",
+      "difficulty": 4,
+      "hook": "A compromised npm package is executing shell scripts during production build.",
+      "alert": "PIPELINE FAILED — Postinstall hook attempted connection to external pastebin",
+      "clock": "T+00:32:00 into escalation",
+      "stakes_line": "Deploying this scheduled release injects backdoors into 80,000 retail apps.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "GITHUB ACTIONS LOG",
+          "content": "npm install: package 'event-telemetry-core@2.1.4' running preinstall curl script"
+        },
+        {
+          "kind": "screen",
+          "label": "DIFF VIEWER",
+          "content": "package-lock.json modified 40 minutes ago by automated dependency bot."
+        },
+        {
+          "kind": "message",
+          "label": "RELEASE MANAGER",
+          "content": "Release Manager: Production deploy freeze is scheduled in 10 minutes. Can we ship?"
+        }
+      ],
+      "question": "What is the decisive response for this compromised release?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Halt deployment, pin previous known-good hash in lockfile, quarantine artifact registry.",
+          "is_best": true,
+          "stability_delta": 30,
+          "outcome": "Release halted cleanly; poison package isolated before touching production.",
+          "why": "Stopping the pipeline and pinning cryptographically verified hashes stops supply chain attack."
+        },
+        {
+          "id": "B",
+          "text": "Run the deploy with '--ignore-scripts' flag to bypass the build warning.",
+          "is_best": false,
+          "stability_delta": -35,
+          "outcome": "Poisoned library still packages into bundle; backdoor goes live to customers.",
+          "why": "Ignoring pipeline security alerts is how backdoors bypass production safeguards."
+        },
+        {
+          "id": "C",
+          "text": "Submit a bug report to the open-source npm maintainer and wait for a fix.",
+          "is_best": false,
+          "stability_delta": -25,
+          "outcome": "Release deadline passes with unresolved vulnerability looming over cluster.",
+          "why": "Open source maintainer response times cannot dictate real-time incident containment."
+        },
+        {
+          "id": "D",
+          "text": "Delete node_modules and re-run the build to see if the error was transient.",
+          "is_best": false,
+          "stability_delta": -10,
+          "outcome": "Rebuild pulls the identical malicious package again, wasting critical time.",
+          "why": "Dependency poisoning is deterministic; rebuilding without pinning reproduces the exploit."
+        }
+      ],
+      "debrief": {
+        "concept": "Cryptographic lockfiles and immutable build gates",
+        "rule_of_thumb": "Never bypass failing build security gates; pin immutable SHA hashes.",
+        "why_best_works": "Lockfiles ensure reproducible builds and prevent silent malicious version upgrades.",
+        "real_world_note": "SolarWinds and event-stream incidents succeeded via untracked build dependencies.",
+        "next_teaser": "Final challenge: the adversary is attempting a direct memory compromise of the root key."
+      }
+    },
+    {
+      "id": "sec-5",
+      "order": 5,
+      "title": "Root Key Exfiltration Zero-Day",
+      "setting": "Hardware Security Module (HSM) Gateway",
+      "concept": "Root key revocation & emergency failover protocol",
+      "difficulty": 5,
+      "hook": "Master cryptographic signing certificates are being tampered with.",
+      "alert": "HSM ALARM — Multiple unauthorized tamper-pin attempts on master keystore",
+      "clock": "T+00:48:12 zero hour",
+      "stakes_line": "Loss of the master key allows attacker to permanently forge company credentials.",
+      "evidence": [
+        {
+          "kind": "log",
+          "label": "HSM AUDIT TRAIL",
+          "content": "KEY_MGMT: ExportPrivateKey attempted on slot 0 (Root CA). Policy violation 0xFA."
+        },
+        {
+          "kind": "metric",
+          "label": "SYSTEM HEALTH",
+          "content": "HSM anti-tamper sensors triggered. Zeroize countdown timer: STANDBY."
+        },
+        {
+          "kind": "message",
+          "label": "CHIEF INFORMATION OFFICER",
+          "content": "CIO: If they steal that root private key, our entire corporate trust chain is dead."
+        }
+      ],
+      "question": "What is the ultimate fail-safe action to save the enterprise?",
+      "options": [
+        {
+          "id": "A",
+          "text": "Trigger emergency cold zeroize of compromised slot and activate offline air-gapped backup.",
+          "is_best": true,
+          "stability_delta": 35,
+          "outcome": "Private key securely destroyed; backup HSM initialized from vault safely.",
+          "why": "Zeroizing destroys the prize before exfiltration; offline backups preserve business continuity."
+        },
+        {
+          "id": "B",
+          "text": "Unplug the HSM power cable from the rack without running shutdown scripts.",
+          "is_best": false,
+          "stability_delta": -35,
+          "outcome": "Internal battery backup keeps memory live; key extraction completes on reserve power.",
+          "why": "Enterprise HSMs have onboard battery backups specifically designed for sudden power cuts."
+        },
+        {
+          "id": "C",
+          "text": "Try SSHing into the HSM operating system to check the active process list.",
+          "is_best": false,
+          "stability_delta": -25,
+          "outcome": "SSH fails because HSMs do not expose shell access; 8 precious minutes lost.",
+          "why": "Hardware appliances do not run standard shell daemons; protocol commands are required."
+        },
+        {
+          "id": "D",
+          "text": "Change the password on the admin dashboard.",
+          "is_best": false,
+          "stability_delta": -15,
+          "outcome": "Attacker is using physical bus taps; software password changes have zero effect.",
+          "why": "Physical tamper attacks require physical zeroization, not application credentials."
+        }
+      ],
+      "debrief": {
+        "concept": "Zeroize compromise and switch to air-gapped root",
+        "rule_of_thumb": "When master keys are threatened, zeroize immediately. Keys can rotate; stolen trust is forever.",
+        "why_best_works": "Denies the attacker their ultimate objective while maintaining recovery paths via cold storage.",
+        "real_world_note": "Certificate Authorities maintain air-gapped ceremony keys in physical bank vaults.",
+        "next_teaser": "Case solved! The timeline has stabilized and the enterprise is secure."
+      }
+    }
+  ]
+}
