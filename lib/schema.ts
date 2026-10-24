@@ -127,6 +127,38 @@ export const ReportSchema = z.object({
 });
 export type Report = z.infer<typeof ReportSchema>;
 
+export const CaseStatusSchema = z.enum(["active", "paused", "done"]);
+export type CaseStatus = z.infer<typeof CaseStatusSchema>;
+
+export const StoredCaseSchema = z.object({
+  id: z.string().min(1),
+  goal: z.string().min(1),
+  caseFile: CaseFileSchema,
+  currentIncident: IncidentBaseSchema,
+  currentIndex: z.number().int().min(0).max(4),
+  results: z.array(IncidentResultSchema),
+  tokens: z.number().int().min(0).max(3),
+  score: z.number().int().min(0),
+  stability: z.number().int().min(0).max(100),
+  status: CaseStatusSchema,
+  currentStep: z.enum(["incident", "reveal", "debrief", "closed"]).optional(),
+  disabledOptionIds: z.array(z.string()).optional(),
+  prefetchedIncident: IncidentBaseSchema.nullable().optional(),
+  curveNote: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type StoredCase = z.infer<typeof StoredCaseSchema>;
+
+export const StoreV2Schema = z.object({
+  cases: z.array(StoredCaseSchema),
+  activeCaseId: z.string().nullable(),
+  wishlist: z.array(z.string()),
+  streak: z.number().int().min(0),
+  lastPlayedDate: z.string().nullable(),
+});
+export type StoreV2 = z.infer<typeof StoreV2Schema>;
+
 export const GameStateSchema = z.object({
   caseFile: CaseFileSchema.nullable(),
   currentIncident: IncidentBaseSchema.nullable(),
@@ -141,5 +173,9 @@ export const GameStateSchema = z.object({
   disabledOptionIds: z.array(z.string()).optional(),
   prefetchedIncident: IncidentBaseSchema.nullable().optional(),
   curveNote: z.string().optional(),
+  // Multi-case v2 fields
+  cases: z.array(StoredCaseSchema).optional(),
+  activeCaseId: z.string().nullable().optional(),
+  wishlist: z.array(z.string()).optional(),
 });
 export type GameState = z.infer<typeof GameStateSchema>;

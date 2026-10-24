@@ -1,12 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { initCaseState } from "@/lib/store";
+import {
+  initCaseState,
+  resumeCase,
+  getGameStateSnapshot,
+  getServerSnapshot,
+  subscribeToStore,
+} from "@/lib/store";
 import { CaseFile, Incident } from "@/lib/schema";
-import { Clock, Rewind, Check } from "lucide-react";
+import { Clock, Rewind, Check, Play } from "lucide-react";
 
 const EXAMPLE_CHIPS = ["Cybersecurity", "UI/UX", "SQL", "DevOps"];
 
@@ -15,6 +21,18 @@ export default function Home() {
   const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("Rewinding the clock...");
+
+  const gameState = useSyncExternalStore(
+    subscribeToStore,
+    getGameStateSnapshot,
+    getServerSnapshot
+  );
+
+  const resumableCase =
+    gameState.cases?.find((c) => c.id === gameState.activeCaseId && c.status !== "done") ||
+    gameState.cases?.find((c) => c.status === "active") ||
+    gameState.cases?.find((c) => c.status === "paused") ||
+    null;
 
   const handleStartCase = async (selectedGoal?: string) => {
     const targetGoal = (selectedGoal || goal || "Cybersecurity").trim();
@@ -99,6 +117,36 @@ export default function Home() {
 
           {/* Core Interactive Card */}
           <div className="w-full bg-paper border-[2.5px] border-ink rounded-[20px] shadow-card p-6 sm:p-8 flex flex-col gap-6 text-left">
+            {/* Compact Resume Card */}
+            {resumableCase && (
+              <div className="w-full bg-butter border-[2.5px] border-ink rounded-[16px] shadow-[3px_3px_0_#17171C] p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 rounded-full bg-paper border-[2px] border-ink flex items-center justify-center flex-shrink-0">
+                    <Play className="w-4 h-4 fill-ink text-ink ml-0.5" strokeWidth={2.5} />
+                  </span>
+                  <div className="truncate">
+                    <span className="font-sans font-bold text-[16px] sm:text-[17px] text-ink block truncate">
+                      Resume {resumableCase.goal}
+                    </span>
+                    <span className="font-mono text-[12px] sm:text-[13px] font-semibold text-ink/80 block">
+                      {resumableCase.results.length}/5 incidents done
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    resumeCase(resumableCase.id);
+                    router.push("/case");
+                  }}
+                  className="px-4 py-1.5 bg-paper hover:bg-chalk border-[2px] border-ink rounded-full font-sans font-bold text-[14px] text-ink shadow-[2px_2px_0_#17171C] hover:-translate-x-[1px] hover:-translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer flex-shrink-0"
+                >
+                  Resume
+                </button>
+              </div>
+            )}
+
             <div>
               <label
                 htmlFor="goal-input"

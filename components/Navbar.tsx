@@ -27,17 +27,7 @@ export function Navbar() {
 
   const isCaseActive = pathname?.startsWith("/case");
   const isCurveActive = pathname?.startsWith("/curve");
-  const isNewSkillActive = pathname === "/";
-
-  const handleNewSkillClick = (e: React.MouseEvent) => {
-    if (pathname === "/") {
-      e.preventDefault();
-      clearGameState();
-      window.location.reload();
-    } else {
-      router.push("/");
-    }
-  };
+  const isSkillsActive = pathname?.startsWith("/skills");
 
   return (
     <>
@@ -55,7 +45,7 @@ export function Navbar() {
           </span>
         </div>
 
-        {/* Center: Desktop Nav (max 3 links) */}
+        {/* Center: Desktop Nav (Case, Curve, Skills) */}
         <nav className="hidden md:flex items-center gap-2 font-sans font-semibold text-[15px]">
           <button
             type="button"
@@ -81,14 +71,14 @@ export function Navbar() {
           </button>
           <button
             type="button"
-            onClick={handleNewSkillClick}
+            onClick={() => router.push("/skills")}
             className={`px-4 py-1.5 rounded-full border-[2px] transition-all cursor-pointer ${
-              isNewSkillActive
+              isSkillsActive
                 ? "bg-butter text-ink border-ink shadow-[2px_2px_0_#000]"
                 : "border-transparent text-chalk hover:bg-mute/40"
             }`}
           >
-            New skill
+            Skills
           </button>
         </nav>
 
@@ -153,12 +143,12 @@ export function Navbar() {
         </button>
         <button
           type="button"
-          onClick={handleNewSkillClick}
+          onClick={() => router.push("/skills")}
           className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-full text-[13px] font-semibold ${
-            isNewSkillActive ? "bg-butter text-ink" : "text-chalk"
+            isSkillsActive ? "bg-butter text-ink" : "text-chalk"
           }`}
         >
-          New skill
+          Skills
         </button>
       </nav>
     </>

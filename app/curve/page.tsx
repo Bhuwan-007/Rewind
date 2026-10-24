@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect, Suspense, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import {
   getGameStateSnapshot,
@@ -12,7 +13,10 @@ import { generateCurveNote } from "@/lib/game";
 import cybersecuritySeed from "@/lib/seed/cybersecurity.json";
 import { Check, Lock } from "lucide-react";
 
-export default function CurvePage() {
+function CurveContent() {
+  const searchParams = useSearchParams();
+  const caseIdParam = searchParams.get("case");
+
   const gameState = useSyncExternalStore(
     subscribeToStore,
     getGameStateSnapshot,
@@ -27,7 +31,19 @@ export default function CurvePage() {
   }, []);
 
   const parsedSeed = FullCaseFileSchema.parse(cybersecuritySeed);
-  const caseFile: CaseFile = gameState.caseFile || {
+
+  // Support ?case=id; default to the active case
+  const selectedCase = caseIdParam
+    ? gameState.cases?.find((c) => c.id === caseIdParam)
+    : null;
+
+  const currentCase =
+    selectedCase ||
+    gameState.cases?.find((c) => c.id === gameState.activeCaseId) ||
+    gameState.cases?.find((c) => c.status === "active") ||
+    null;
+
+  const caseFile: CaseFile = currentCase?.caseFile || gameState.caseFile || {
     goal: parsedSeed.goal,
     reframed_goal: parsedSeed.reframed_goal ?? null,
     role: parsedSeed.role,
@@ -43,13 +59,14 @@ export default function CurvePage() {
     })),
   };
 
-  const results = gameState.results || [];
+  const results = currentCase ? currentCase.results : (gameState.results || []);
+  const score = currentCase ? currentCase.score : (gameState.score || 0);
   const completedCount = results.length;
 
   // Generate or fetch AI Curve Note
   useEffect(() => {
-    if (gameState.curveNote) {
-      setAiNote(gameState.curveNote);
+    if (currentCase?.curveNote || gameState.curveNote) {
+      setAiNote((currentCase?.curveNote || gameState.curveNote) as string);
       return;
     }
 
@@ -65,7 +82,7 @@ export default function CurvePage() {
         body: JSON.stringify({
           goal: caseFile.goal,
           role: caseFile.role,
-          score: gameState.score,
+          score,
           results,
           concepts: caseFile.incidents.slice(0, completedCount).map((inc) => inc.concept),
         }),
@@ -80,7 +97,7 @@ export default function CurvePage() {
           // Keep fallbackNote
         });
     }
-  }, [results, caseFile, gameState.curveNote, gameState.score, completedCount]);
+  }, [results, caseFile, currentCase?.curveNote, gameState.curveNote, score, completedCount]);
 
   if (!mounted) {
     return null;
@@ -314,5 +331,19 @@ export default function CurvePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CurvePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-chalk text-ink flex items-center justify-center font-mono">
+          Loading learning curve...
+        </div>
+      }
+    >
+      <CurveContent />
+    </Suspense>
   );
 }
