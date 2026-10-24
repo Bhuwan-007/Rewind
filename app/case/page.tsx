@@ -27,6 +27,7 @@ import { CaseFile, Incident, Option, FullCaseFileSchema } from "@/lib/schema";
 import { scoreForRewinds, rankForScore, nextDifficulty } from "@/lib/game";
 import cybersecuritySeed from "@/lib/seed/cybersecurity.json";
 import { AlertTriangle, Trophy, Sparkles, Download, ArrowLeft } from "lucide-react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 type FlowStep = "incident" | "reveal" | "debrief" | "closed";
 
@@ -51,6 +52,7 @@ export default function CasePage() {
   const [prefetchedIncident, setPrefetchedIncident] = useState<Incident | null>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
   const [reportVerdict, setReportVerdict] = useState<string>(
     "Successfully contained the incident and restored operational integrity under pressure."
   );
@@ -247,62 +249,67 @@ export default function CasePage() {
 
   // Handle Next Incident button press
   const handleNextIncident = async () => {
-    const pointsEarned = scoreForRewinds(currentRewindsUsed);
-    const incidentResult = {
-      incidentId: currentIncident.id,
-      difficulty: currentIncident.difficulty,
-      rewindsUsed: currentRewindsUsed,
-      points: pointsEarned,
-      solvedFirstTry: currentRewindsUsed === 0,
-    };
+    setLoadingNext(true);
+    try {
+      const pointsEarned = scoreForRewinds(currentRewindsUsed);
+      const incidentResult = {
+        incidentId: currentIncident.id,
+        difficulty: currentIncident.difficulty,
+        rewindsUsed: currentRewindsUsed,
+        points: pointsEarned,
+        solvedFirstTry: currentRewindsUsed === 0,
+      };
 
-    // 1. Record completed result in store
-    const updatedState = recordIncidentCompletion(gameState, incidentResult);
+      // 1. Record completed result in store
+      const updatedState = recordIncidentCompletion(gameState, incidentResult);
 
-    // 2. Check if this was the last incident
-    if (currentIndex >= 4) {
-      transitionToStep("closed");
-      return;
-    }
-
-    // 3. Load next incident: use prefetched if ready, else fetch or use seed
-    const nextIdx = currentIndex + 1;
-    let nextIncident: Incident = prefetchedIncident || (parsedSeed.incidents[nextIdx] as Incident);
-
-    if (!prefetchedIncident) {
-      try {
-        const nextMeta = caseFile.incidents[nextIdx];
-        const adaptedDiff = nextDifficulty(currentIncident.difficulty, currentRewindsUsed);
-        const supportLevel = currentRewindsUsed >= 2 ? "high" : "normal";
-
-        const res = await fetch("/api/incident", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            goal: caseFile.goal,
-            role: caseFile.role,
-            incident: nextMeta,
-            difficulty: adaptedDiff,
-            support_level: supportLevel,
-          }),
-        });
-        if (res.ok) {
-          nextIncident = await res.json();
-        }
-      } catch (err) {
-        console.warn("Using fallback seed for next incident:", err);
+      // 2. Check if this was the last incident
+      if (currentIndex >= 4) {
+        transitionToStep("closed");
+        return;
       }
+
+      // 3. Load next incident: use prefetched if ready, else fetch or use seed
+      const nextIdx = currentIndex + 1;
+      let nextIncident: Incident = prefetchedIncident || (parsedSeed.incidents[nextIdx] as Incident);
+
+      if (!prefetchedIncident) {
+        try {
+          const nextMeta = caseFile.incidents[nextIdx];
+          const adaptedDiff = nextDifficulty(currentIncident.difficulty, currentRewindsUsed);
+          const supportLevel = currentRewindsUsed >= 2 ? "high" : "normal";
+
+          const res = await fetch("/api/incident", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              goal: caseFile.goal,
+              role: caseFile.role,
+              incident: nextMeta,
+              difficulty: adaptedDiff,
+              support_level: supportLevel,
+            }),
+          });
+          if (res.ok) {
+            nextIncident = await res.json();
+          }
+        } catch (err) {
+          console.warn("Using fallback seed for next incident:", err);
+        }
+      }
+
+      // 4. Advance store to next incident
+      advanceIncident(updatedState, nextIncident);
+
+      // 5. Reset local incident state for next round
+      setDisabledOptionIds([]);
+      setCurrentRewindsUsed(0);
+      setChosenOption(null);
+      setPrefetchedIncident(null);
+      setStep("incident");
+    } finally {
+      setLoadingNext(false);
     }
-
-    // 4. Advance store to next incident
-    advanceIncident(updatedState, nextIncident);
-
-    // 5. Reset local incident state for next round
-    setDisabledOptionIds([]);
-    setCurrentRewindsUsed(0);
-    setChosenOption(null);
-    setPrefetchedIncident(null);
-    setStep("incident");
   };
 
   // Download Share Card as PNG
@@ -342,6 +349,16 @@ export default function CasePage() {
   return (
     <div className="min-h-screen bg-chalk text-ink flex flex-col">
       <Navbar />
+
+      {loadingNext && (
+        <LoadingScreen
+          fullscreen={true}
+          title="Calibrating Next Incident..."
+          subtitle={`Escalating crisis to incident ${currentIndex + 2} of 5`}
+          goal={caseFile.goal}
+          step={2}
+        />
+      )}
 
       <main className="flex-1 flex flex-col items-center px-4 pt-20 pb-20">
         <div className="w-full max-w-[760px] flex flex-col items-center">

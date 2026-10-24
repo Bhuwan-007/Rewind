@@ -16,12 +16,14 @@ import {
 import { CaseFile, Incident } from "@/lib/schema";
 import { rankForScore } from "@/lib/game";
 import { Play, Check, Bookmark, ArrowRight, Trash2, Trophy, Clock } from "lucide-react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 export default function SkillsPage() {
   const router = useRouter();
   const [newGoal, setNewGoal] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState("Calibrating case...");
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [loadingGoal, setLoadingGoal] = useState("");
 
   const state = useSyncExternalStore(
     subscribeToStore,
@@ -42,11 +44,12 @@ export default function SkillsPage() {
     if (!trimmed) return;
 
     setLoading(true);
-    setLoadingStep("Rewinding the clock...");
+    setLoadingGoal(trimmed);
+    setLoadingStepIndex(0);
 
     try {
       // 1. Generate or fetch CaseFile
-      setLoadingStep("Assembling 5-incident roadmap...");
+      setLoadingStepIndex(1);
       const caseRes = await fetch("/api/casefile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,7 +58,7 @@ export default function SkillsPage() {
       const caseFile: CaseFile = await caseRes.json();
 
       // 2. Fetch Incident 1
-      setLoadingStep("Calibrating emergency incident 1...");
+      setLoadingStepIndex(2);
       const firstMeta = caseFile.incidents[0];
       const incRes = await fetch("/api/incident", {
         method: "POST",
@@ -93,6 +96,16 @@ export default function SkillsPage() {
   return (
     <div className="min-h-screen bg-chalk text-ink flex flex-col">
       <Navbar />
+
+      {loading && (
+        <LoadingScreen
+          fullscreen={true}
+          goal={loadingGoal}
+          step={loadingStepIndex}
+          title="Rewinding the clock..."
+          subtitle={`Simulating the worst day for ${loadingGoal}`}
+        />
+      )}
 
       <main className="flex-1 flex flex-col items-center px-4 pt-24 pb-20">
         <div className="w-full max-w-[760px] flex flex-col gap-8 text-left">
@@ -139,7 +152,7 @@ export default function SkillsPage() {
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="animate-spin inline-block w-4 h-4 border-2 border-ink border-t-transparent rounded-full" />
-                      {loadingStep}
+                      Rewinding the clock...
                     </span>
                   ) : (
                     "Start case"

@@ -13,6 +13,7 @@ import {
 } from "@/lib/store";
 import { CaseFile, Incident } from "@/lib/schema";
 import { Clock, Rewind, Check, Play } from "lucide-react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const EXAMPLE_CHIPS = ["Cybersecurity", "UI/UX", "SQL", "DevOps"];
 
@@ -20,7 +21,8 @@ export default function Home() {
   const router = useRouter();
   const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState("Rewinding the clock...");
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [loadingGoal, setLoadingGoal] = useState("");
 
   const gameState = useSyncExternalStore(
     subscribeToStore,
@@ -39,11 +41,12 @@ export default function Home() {
     if (!targetGoal) return;
 
     setLoading(true);
-    setLoadingStep("Rewinding the clock...");
+    setLoadingGoal(targetGoal);
+    setLoadingStepIndex(0);
 
     try {
       // 1. Generate or fetch CaseFile
-      setLoadingStep("Assembling 5-incident roadmap...");
+      setLoadingStepIndex(1);
       const caseRes = await fetch("/api/casefile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +55,7 @@ export default function Home() {
       const caseFile: CaseFile = await caseRes.json();
 
       // 2. Calibrate and fetch Incident 1
-      setLoadingStep("Calibrating emergency incident 1...");
+      setLoadingStepIndex(2);
       const firstMeta = caseFile.incidents[0];
       const incRes = await fetch("/api/incident", {
         method: "POST",
@@ -82,6 +85,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-chalk text-ink flex flex-col">
       <Navbar />
+
+      {loading && (
+        <LoadingScreen
+          fullscreen={true}
+          goal={loadingGoal}
+          step={loadingStepIndex}
+          title="Rewinding the clock..."
+          subtitle={`Simulating the worst day for ${loadingGoal}`}
+        />
+      )}
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 pt-24 pb-16">
         <div className="w-full max-w-[760px] flex flex-col items-center text-center">
@@ -201,7 +214,7 @@ export default function Home() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="animate-spin inline-block w-4 h-4 border-2 border-ink border-t-transparent rounded-full" />
-                  {loadingStep}
+                  Rewinding the clock...
                 </span>
               ) : (
                 "Start the case"
