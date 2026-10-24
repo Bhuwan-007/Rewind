@@ -31,11 +31,11 @@ export type Debrief = z.infer<typeof DebriefSchema>;
 
 export const IncidentMetaSchema = z.object({
   id: z.string().min(1, "Incident ID is required"),
-  order: z.number().int().min(1).max(5),
+  order: z.union([z.number(), z.string().transform(Number)]).pipe(z.number().int().min(1).max(5)),
   title: z.string().min(1, "Incident title is required"),
   setting: z.string().min(1, "Incident setting is required"),
   concept: z.string().min(1, "Incident concept is required"),
-  difficulty: z.number().int().min(1).max(5),
+  difficulty: z.union([z.number(), z.string().transform(Number)]).pipe(z.number().int().min(1).max(5)),
   hook: z.string().min(1, "Incident hook is required"),
 });
 export type IncidentMeta = z.infer<typeof IncidentMetaSchema>;
@@ -83,6 +83,7 @@ export type Incident = z.infer<typeof IncidentSchema>;
 
 export const CaseFileSchema = z.object({
   goal: z.string().min(1, "Goal is required"),
+  reframed_goal: z.union([z.string(), z.null()]).optional().transform((v) => (v === "null" ? null : v ?? null)),
   role: z.string().min(1, "Role is required"),
   tagline: z.string().min(1, "Tagline is required"),
   incidents: z.array(IncidentMetaSchema).length(5, "Case file must contain exactly 5 incidents"),
@@ -91,6 +92,7 @@ export type CaseFile = z.infer<typeof CaseFileSchema>;
 
 export const FullCaseFileSchema = z.object({
   goal: z.string().min(1, "Goal is required"),
+  reframed_goal: z.union([z.string(), z.null()]).optional().transform((v) => (v === "null" ? null : v ?? null)),
   role: z.string().min(1, "Role is required"),
   tagline: z.string().min(1, "Tagline is required"),
   incidents: z.array(IncidentSchema).length(5, "Full case file must contain exactly 5 full incidents"),
