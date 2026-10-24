@@ -40,4 +40,39 @@ body {
   background-color: var(--chalk);
   color: var(--ink);
   font-family: var(--font-sans), sans-serif;
+  font-size: 18px;
+  line-height: 28px;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Sticker Arcade hard offset button press effect */
+.btn-press {
+  border: 2.5px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.btn-press:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.btn-press:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.btn-press:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Sticker Arcade card outline & shadow */
+.card-arcade {
+  background-color: var(--card);
+  border: 2.5px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 4px 4px 0 var(--ink);
 }
